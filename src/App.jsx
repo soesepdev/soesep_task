@@ -78,22 +78,22 @@ const App = () => {
   };
 
   const saveHistory = async (taskName, action, changes) => {
-    try {
-      const res = await axios.get(`${JSONBIN_API}/${HISTORY_BIN_ID}`, axiosConfig);
-      const historyData = res.data.record || [];
-      const newHistory = [
-        {
-          task: taskName,
-          action,
-          timestamp: new Date().toISOString(),
-          changes
-        },
-        ...historyData
-      ];
-      await axios.put(`${JSONBIN_API}/${HISTORY_BIN_ID}`, newHistory, axiosConfig);
-    } catch (err) {
-      console.error(err);
-    }
+    // try {
+    //   const res = await axios.get(`${JSONBIN_API}/${HISTORY_BIN_ID}`, axiosConfig);
+    //   const historyData = res.data.record || [];
+    //   const newHistory = [
+    //     {
+    //       task: taskName,
+    //       action,
+    //       timestamp: new Date().toISOString(),
+    //       changes
+    //     },
+    //     ...historyData
+    //   ];
+    //   await axios.put(`${JSONBIN_API}/${HISTORY_BIN_ID}`, newHistory, axiosConfig);
+    // } catch (err) {
+    //   console.error(err);
+    // }
   };
 
   const handleOk = () => {
@@ -147,17 +147,17 @@ const App = () => {
   };
 
   const onViewHistory = async (task) => {
-    try {
-      const res = await axios.get(`${JSONBIN_API}/${HISTORY_BIN_ID}`, axiosConfig);
-      const allHistory = res.data.record || [];
-      const filtered = allHistory.filter((h) => h.task === task.name);
-      setSelectedHistory(filtered);
-      setSelectedTaskName(task.name);
-      setHistoryModalOpen(true);
-    } catch (err) {
-      console.error(err);
-      message.error('Failed to load history');
-    }
+    // try {
+    //   const res = await axios.get(`${JSONBIN_API}/${HISTORY_BIN_ID}`, axiosConfig);
+    //   const allHistory = res.data.record || [];
+    //   const filtered = allHistory.filter((h) => h.task === task.name);
+    //   setSelectedHistory(filtered);
+    //   setSelectedTaskName(task.name);
+    //   setHistoryModalOpen(true);
+    // } catch (err) {
+    //   console.error(err);
+    //   message.error('Failed to load history');
+    // }
   };
 
   const openEditModal = (record) => {
