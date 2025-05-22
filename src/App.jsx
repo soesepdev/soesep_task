@@ -207,7 +207,6 @@ const App = () => {
             loading={deletingKey === record.key}
             onClick={() => handleDelete(record)}
           />
-          <Button icon={<HistoryOutlined />} onClick={() => onViewHistory(record)} />
         </Space>
       )
     }
