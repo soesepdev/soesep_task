@@ -159,7 +159,7 @@ const App = () => {
     { title: 'Name', dataIndex: 'name' },
     { title: 'Description', dataIndex: 'description' },
     { title: 'Project', dataIndex: 'project' },
-    { title: 'Date', dataIndex: 'deadline' },
+    { title: 'Date', dataIndex: 'deadline', width: 110 },
     {
       title: 'Status',
       dataIndex: 'status',
