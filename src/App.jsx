@@ -49,8 +49,12 @@ const App = () => {
   const [deletingKey, setDeletingKey] = useState(null);
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isReadOnly, setIsReadOnly] = useState(true);
 
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    setIsReadOnly(token !== '112233');
     fetchData();
   }, []);
 
@@ -159,17 +163,18 @@ const App = () => {
     { title: 'Note', dataIndex: 'note' },
     {
       title: 'Action',
-      render: (_, record) => (
-        <Space>
-          <Button icon={<EditOutlined />} onClick={() => openEditModal(record)} />
-          <Button
-            icon={<DeleteOutlined />}
-            danger
-            loading={deletingKey === record.key}
-            onClick={() => handleDelete(record)}
-          />
-        </Space>
-      )
+      render: (_, record) =>
+        !isReadOnly && (
+          <Space>
+            <Button icon={<EditOutlined />} onClick={() => openEditModal(record)} />
+            <Button
+              icon={<DeleteOutlined />}
+              danger
+              loading={deletingKey === record.key}
+              onClick={() => handleDelete(record)}
+            />
+          </Space>
+        )
     }
   ];
 
@@ -252,16 +257,18 @@ const App = () => {
         </Col>
 
         <Col span={3} style={{ textAlign: 'right' }}>
-          <Button
-            type="primary"
-            onClick={() => {
-              setModalOpen(true);
-              form.resetFields();
-              setEditingTask(null);
-            }}
-          >
-            Create
-          </Button>
+          {!isReadOnly && (
+            <Button
+              type="primary"
+              onClick={() => {
+                setModalOpen(true);
+                form.resetFields();
+                setEditingTask(null);
+              }}
+            >
+              Create
+            </Button>
+          )}
         </Col>
       </Row>
 
@@ -285,33 +292,34 @@ const App = () => {
         onCancel={() => setModalOpen(false)}
         onOk={handleOk}
         confirmLoading={submitLoading}
+        okButtonProps={{ disabled: isReadOnly }}
       >
         <Form form={form} layout="vertical" initialValues={{ status: 'not started' }}>
           <Form.Item name="name" label="Name" rules={[{ required: true }]}>
-            <Input />
+            <Input disabled={isReadOnly} />
           </Form.Item>
           <Form.Item name="description" label="Description" rules={[{ required: true }]}>
-            <Input.TextArea rows={3} />
+            <Input.TextArea rows={3} disabled={isReadOnly} />
           </Form.Item>
           <Form.Item name="project" label="Project" rules={[{ required: true }]}>
-            <Select>
+            <Select disabled={isReadOnly}>
               {projectOptions.map(proj => (
                 <Option key={proj} value={proj}>{proj}</Option>
               ))}
             </Select>
           </Form.Item>
           <Form.Item name="deadline" label="Date" rules={[{ required: true }]}>
-            <DatePicker style={{ width: '100%' }} />
+            <DatePicker style={{ width: '100%' }} disabled={isReadOnly} />
           </Form.Item>
           <Form.Item name="status" label="Status" rules={[{ required: true }]}>
-            <Select>
+            <Select disabled={isReadOnly}>
               {statusOptions.map(opt => (
                 <Option key={opt.value} value={opt.value}>{opt.label}</Option>
               ))}
             </Select>
           </Form.Item>
           <Form.Item name="note" label="Note">
-            <Input.TextArea rows={3} />
+            <Input.TextArea rows={3} disabled={isReadOnly} />
           </Form.Item>
         </Form>
       </Modal>
