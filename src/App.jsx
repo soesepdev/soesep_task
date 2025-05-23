@@ -163,18 +163,22 @@ const App = () => {
     { title: 'Note', dataIndex: 'note' },
     {
       title: 'Action',
-      render: (_, record) =>
-        !isReadOnly && (
-          <Space>
-            <Button icon={<EditOutlined />} onClick={() => openEditModal(record)} />
-            <Button
-              icon={<DeleteOutlined />}
-              danger
-              loading={deletingKey === record.key}
-              onClick={() => handleDelete(record)}
-            />
-          </Space>
-        )
+      render: (_, record) => (
+        <Space>
+          <Button
+            icon={<EditOutlined />}
+            onClick={() => openEditModal(record)}
+            disabled={isReadOnly}
+          />
+          <Button
+            icon={<DeleteOutlined />}
+            danger
+            loading={deletingKey === record.key}
+            onClick={() => handleDelete(record)}
+            disabled={isReadOnly}
+          />
+        </Space>
+      )
     }
   ];
 
@@ -257,18 +261,17 @@ const App = () => {
         </Col>
 
         <Col span={3} style={{ textAlign: 'right' }}>
-          {!isReadOnly && (
-            <Button
-              type="primary"
-              onClick={() => {
-                setModalOpen(true);
-                form.resetFields();
-                setEditingTask(null);
-              }}
-            >
-              Create
-            </Button>
-          )}
+          <Button
+            type="primary"
+            disabled={isReadOnly}
+            onClick={() => {
+              setModalOpen(true);
+              form.resetFields();
+              setEditingTask(null);
+            }}
+          >
+            Create
+          </Button>
         </Col>
       </Row>
 
