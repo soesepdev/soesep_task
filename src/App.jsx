@@ -6,7 +6,7 @@ import {
 import {
   CheckCircleOutlined, ClockCircleOutlined, MinusCircleOutlined,
   ExclamationCircleOutlined, SyncOutlined, EditOutlined,
-  DeleteOutlined, LockOutlined
+  DeleteOutlined, LockOutlined, CloseOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import axios from 'axios';
@@ -138,12 +138,16 @@ const App = () => {
   };
 
   const handleSetToken = () => {
-    localStorage.setItem('task-token', tokenInput);
-    setLocalToken(tokenInput);
-    setIsReadOnly(tokenInput !== '112233');
+    if (tokenInput === '112233') {
+      localStorage.setItem('task-token', tokenInput);
+      setLocalToken(tokenInput);
+      setIsReadOnly(false);
+      message.success('Token saved');
+    } else {
+      message.error('Invalid token');
+    }
     setTokenModalOpen(false);
     setTokenInput('');
-    message.success('Token saved');
   };
 
   const columns = [
@@ -273,7 +277,7 @@ const App = () => {
         </Col>
         
         <Col span={1}>
-          {!localToken && (
+          {!localToken ? (
             <Button
               icon={<LockOutlined />}
               onClick={() => setTokenModalOpen(true)}
@@ -281,6 +285,19 @@ const App = () => {
                 backgroundColor: '#000',
                 borderColor: '#000',
                 color: '#fff',
+              }}
+            />
+          ) : (
+            <Button
+              type="primary"
+              icon={<CloseOutlined />}
+              danger
+              onClick={() => {
+                // tombol close token dari UI — hapus token & set read-only
+                localStorage.removeItem('task-token');
+                setLocalToken(null);
+                setIsReadOnly(true);
+                message.info('Logged out');
               }}
             />
           )}
@@ -356,7 +373,13 @@ const App = () => {
       <Modal
         open={tokenModalOpen}
         title="Enter Token"
-        onCancel={() => setTokenModalOpen(false)}
+        onCancel={() => {
+          localStorage.removeItem('task-token');
+          setLocalToken(null);
+          setIsReadOnly(true);
+          setTokenModalOpen(false);
+          setTokenInput('');
+        }}
         onOk={handleSetToken}
       >
         <Input
