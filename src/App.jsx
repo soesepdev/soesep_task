@@ -41,7 +41,7 @@ const App = () => {
   const [editingTask, setEditingTask] = useState(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
-  const [filterStatus, setFilterStatus] = useState(null);
+  const [filterStatus, setFilterStatus] = useState([]); // Multiple select array
   const [filterProject, setFilterProject] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -175,7 +175,7 @@ const App = () => {
     }
   ];
 
-  // Filter data including searchText (search all columns), filterStatus, filterProject
+  // Filter data including searchText (search all columns), filterStatus (multiple), filterProject
   const filteredData = data.filter(item => {
     const searchLower = searchText.toLowerCase();
     const matchesSearch =
@@ -185,7 +185,7 @@ const App = () => {
       item.status.toLowerCase().includes(searchLower) ||
       (item.note ? item.note.toLowerCase().includes(searchLower) : false);
 
-    const matchesStatus = filterStatus ? item.status === filterStatus : true;
+    const matchesStatus = filterStatus.length === 0 || filterStatus.includes(item.status);
     const matchesProject = filterProject ? item.project === filterProject : true;
 
     return matchesSearch && matchesStatus && matchesProject;
@@ -205,6 +205,7 @@ const App = () => {
 
         <Col span={6}>
           <Select
+            mode="multiple"
             placeholder="Filter by status"
             value={filterStatus}
             onChange={setFilterStatus}
