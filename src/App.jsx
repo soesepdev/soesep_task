@@ -6,7 +6,7 @@ import {
 import {
   CheckCircleOutlined, ClockCircleOutlined, MinusCircleOutlined,
   ExclamationCircleOutlined, SyncOutlined, EditOutlined,
-  DeleteOutlined
+  DeleteOutlined, LockOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import axios from 'axios';
@@ -50,11 +50,14 @@ const App = () => {
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [isReadOnly, setIsReadOnly] = useState(true);
+  const [tokenModalOpen, setTokenModalOpen] = useState(false);
+  const [tokenInput, setTokenInput] = useState('');
+  const [localToken, setLocalToken] = useState(null);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    setIsReadOnly(token !== '112233');
+    const storedToken = localStorage.getItem('task-token');
+    setLocalToken(storedToken);
+    setIsReadOnly(storedToken !== '112233');
     fetchData();
   }, []);
 
@@ -132,6 +135,15 @@ const App = () => {
       deadline: dayjs(record.deadline)
     });
     setModalOpen(true);
+  };
+
+  const handleSetToken = () => {
+    localStorage.setItem('task-token', tokenInput);
+    setLocalToken(tokenInput);
+    setIsReadOnly(tokenInput !== '112233');
+    setTokenModalOpen(false);
+    setTokenInput('');
+    message.success('Token saved');
   };
 
   const columns = [
@@ -242,9 +254,9 @@ const App = () => {
           </Select>
         </Col>
 
-        <Col span={4}>
+        <Col span={3}>
           <DatePicker
-            placeholder="Filter by deadline"
+            placeholder="Filter by date"
             value={filterDate}
             onChange={setFilterDate}
             allowClear
@@ -258,6 +270,20 @@ const App = () => {
               <Option key={size} value={size}>Show {size}</Option>
             ))}
           </Select>
+        </Col>
+        
+        <Col span={1}>
+          {!localToken && (
+            <Button
+              icon={<LockOutlined />}
+              onClick={() => setTokenModalOpen(true)}
+              style={{
+                backgroundColor: '#000',
+                borderColor: '#000',
+                color: '#fff',
+              }}
+            />
+          )}
         </Col>
 
         <Col span={3} style={{ textAlign: 'right' }}>
@@ -325,6 +351,19 @@ const App = () => {
             <Input.TextArea rows={3} disabled={isReadOnly} />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        open={tokenModalOpen}
+        title="Enter Token"
+        onCancel={() => setTokenModalOpen(false)}
+        onOk={handleSetToken}
+      >
+        <Input
+          placeholder="Enter token"
+          value={tokenInput}
+          onChange={(e) => setTokenInput(e.target.value)}
+        />
       </Modal>
     </div>
   );
