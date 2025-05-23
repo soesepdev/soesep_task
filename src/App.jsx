@@ -6,7 +6,7 @@ import {
 import {
   CheckCircleOutlined, ClockCircleOutlined, MinusCircleOutlined,
   ExclamationCircleOutlined, SyncOutlined, EditOutlined,
-  DeleteOutlined, HistoryOutlined
+  DeleteOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import axios from 'axios';
@@ -15,7 +15,7 @@ const { Option } = Select;
 const { confirm } = Modal;
 
 const MAIN_BIN_ID = '682c44bf8960c979a59d8006';
-const HISTORY_BIN_ID = '682c44da8a456b7966a1be34';
+// const HISTORY_BIN_ID = '682c44da8a456b7966a1be34';
 const JSONBIN_API = 'https://api.jsonbin.io/v3/b';
 const ACCESS_KEY = '$2a$10$E8n0tBaz.zWHVc4S9UDEkO3UTGM2Ir0XxuiLYYkJf1TZz8Z0QMvjC';
 
@@ -33,6 +33,8 @@ const statusOptions = [
   { value: 'not started', label: 'Not started' },
 ];
 
+const projectOptions = ['MyGraPARI', 'OM'];
+
 const App = () => {
   const [data, setData] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -40,12 +42,13 @@ const App = () => {
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
   const [filterStatus, setFilterStatus] = useState(null);
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
-  const [selectedHistory, setSelectedHistory] = useState([]);
-  const [selectedTaskName, setSelectedTaskName] = useState('');
+  const [filterProject, setFilterProject] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // New states for loading buttons
+  // pagination page size
+  const [pageSize, setPageSize] = useState(10);
+
+  // loading button states
   const [submitLoading, setSubmitLoading] = useState(false);
   const [deletingKey, setDeletingKey] = useState(null);
 
@@ -77,25 +80,6 @@ const App = () => {
     }
   };
 
-  const saveHistory = async (taskName, action, changes) => {
-    // try {
-    //   const res = await axios.get(`${JSONBIN_API}/${HISTORY_BIN_ID}`, axiosConfig);
-    //   const historyData = res.data.record || [];
-    //   const newHistory = [
-    //     {
-    //       task: taskName,
-    //       action,
-    //       timestamp: new Date().toISOString(),
-    //       changes
-    //     },
-    //     ...historyData
-    //   ];
-    //   await axios.put(`${JSONBIN_API}/${HISTORY_BIN_ID}`, newHistory, axiosConfig);
-    // } catch (err) {
-    //   console.error(err);
-    // }
-  };
-
   const handleOk = () => {
     form.validateFields().then(async (values) => {
       setSubmitLoading(true);
@@ -106,16 +90,10 @@ const App = () => {
       let newData;
       if (editingTask !== null) {
         newData = [...data];
-        const old = newData[editingTask.key];
         newData[editingTask.key] = newTask;
-        await saveHistory(old.name, 'update', {
-          name: { old: old.name, new: newTask.name },
-          status: { old: old.status, new: newTask.status }
-        });
         message.success('Task updated');
       } else {
         newData = [...data, newTask];
-        await saveHistory(newTask.name, 'create', { status: newTask.status });
         message.success('Task created');
       }
       setModalOpen(false);
@@ -135,7 +113,6 @@ const App = () => {
       onOk: async () => {
         setDeletingKey(record.key);
         const newData = data.filter((_, idx) => idx !== record.key);
-        await saveHistory(record.name, 'delete', {});
         await saveData(newData);
         setDeletingKey(null);
         message.success('Deleted');
@@ -144,20 +121,6 @@ const App = () => {
         setDeletingKey(null);
       }
     });
-  };
-
-  const onViewHistory = async (task) => {
-    // try {
-    //   const res = await axios.get(`${JSONBIN_API}/${HISTORY_BIN_ID}`, axiosConfig);
-    //   const allHistory = res.data.record || [];
-    //   const filtered = allHistory.filter((h) => h.task === task.name);
-    //   setSelectedHistory(filtered);
-    //   setSelectedTaskName(task.name);
-    //   setHistoryModalOpen(true);
-    // } catch (err) {
-    //   console.error(err);
-    //   message.error('Failed to load history');
-    // }
   };
 
   const openEditModal = (record) => {
@@ -212,23 +175,39 @@ const App = () => {
     }
   ];
 
-  const filteredData = data.filter((item) =>
-    (item.name + item.description + item.project).toLowerCase().includes(searchText.toLowerCase()) &&
-    (!filterStatus || item.status === filterStatus)
-  );
+  // Filter data including searchText (search all columns), filterStatus, filterProject
+  const filteredData = data.filter(item => {
+    const searchLower = searchText.toLowerCase();
+    const matchesSearch =
+      item.name.toLowerCase().includes(searchLower) ||
+      item.description.toLowerCase().includes(searchLower) ||
+      item.project.toLowerCase().includes(searchLower) ||
+      item.status.toLowerCase().includes(searchLower) ||
+      (item.note ? item.note.toLowerCase().includes(searchLower) : false);
+
+    const matchesStatus = filterStatus ? item.status === filterStatus : true;
+    const matchesProject = filterProject ? item.project === filterProject : true;
+
+    return matchesSearch && matchesStatus && matchesProject;
+  });
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
-      <div>tes</div>
       <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={8}>
-          <Input placeholder="Search..." value={searchText} onChange={e => setSearchText(e.target.value)} allowClear />
+        <Col span={6}>
+          <Input
+            placeholder="Search..."
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            allowClear
+          />
         </Col>
-        <Col span={8}>
+
+        <Col span={6}>
           <Select
             placeholder="Filter by status"
             value={filterStatus}
-            onChange={(v) => setFilterStatus(v)}
+            onChange={setFilterStatus}
             allowClear
             style={{ width: '100%' }}
           >
@@ -237,7 +216,36 @@ const App = () => {
             ))}
           </Select>
         </Col>
-        <Col span={8} style={{ textAlign: 'right' }}>
+
+        <Col span={4}>
+          <Select
+            placeholder="Filter by project"
+            value={filterProject}
+            onChange={setFilterProject}
+            allowClear
+            style={{ width: '100%' }}
+          >
+            {projectOptions.map(proj => (
+              <Option key={proj} value={proj}>{proj}</Option>
+            ))}
+          </Select>
+        </Col>
+
+        <Col span={4}>
+          <Select
+            value={pageSize}
+            onChange={setPageSize}
+            style={{ width: 120 }}
+          >
+            {[5, 10, 20, 50].map(size => (
+              <Option key={size} value={size}>
+                Show {size}
+              </Option>
+            ))}
+          </Select>
+        </Col>
+
+        <Col span={4} style={{ textAlign: 'right' }}>
           <Button
             type="primary"
             onClick={() => {
@@ -255,9 +263,9 @@ const App = () => {
         columns={columns}
         dataSource={filteredData}
         rowKey="key"
-        pagination={{ pageSize: 10 }}
+        pagination={{ pageSize }}
         loading={loading}
-        scroll={{ x: 1000 }} 
+        scroll={{ x: 1000 }}
       />
 
       <Modal
@@ -272,10 +280,14 @@ const App = () => {
             <Input />
           </Form.Item>
           <Form.Item name="description" label="Description" rules={[{ required: true }]}>
-            <Input />
+            <Input.TextArea rows={3} />
           </Form.Item>
           <Form.Item name="project" label="Project" rules={[{ required: true }]}>
-            <Input />
+            <Select>
+              {projectOptions.map(proj => (
+                <Option key={proj} value={proj}>{proj}</Option>
+              ))}
+            </Select>
           </Form.Item>
           <Form.Item name="deadline" label="Deadline" rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} />
@@ -292,36 +304,8 @@ const App = () => {
           </Form.Item>
         </Form>
       </Modal>
-
-      <Modal
-        title={`History of "${selectedTaskName}"`}
-        open={historyModalOpen}
-        footer={null}
-        onCancel={() => setHistoryModalOpen(false)}
-        bodyStyle={{ maxHeight: '60vh', overflowY: 'auto' }}
-      >
-        {selectedHistory.length === 0 ? (
-          <p>No history found.</p>
-        ) : (
-          selectedHistory.map((h, idx) => (
-            <div key={idx} style={{ marginBottom: 16, borderBottom: '1px solid #ddd', paddingBottom: 8 }}>
-              <p><b>Action:</b> {h.action}</p>
-              <p><b>Time:</b> {dayjs(h.timestamp).format('YYYY-MM-DD HH:mm:ss')}</p>
-              {h.changes && (
-                <ul>
-                  {Object.entries(h.changes).map(([key, val]) => (
-                    <li key={key}>
-                      {key}: <del>{val.old}</del> → <b>{val.new}</b>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))
-        )}
-      </Modal>
     </div>
   );
 };
 
-export default App; 
+export default App;
