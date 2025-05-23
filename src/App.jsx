@@ -34,6 +34,7 @@ const statusOptions = [
 ];
 
 const projectOptions = ['MyGraPARI', 'OM'];
+const deployOptions = ['Local', 'Dev', 'Production'];
 
 const App = () => {
   const [data, setData] = useState([]);
@@ -161,6 +162,11 @@ const App = () => {
     { title: 'Project', dataIndex: 'project' },
     { title: 'Date', dataIndex: 'deadline', width: 110 },
     {
+      title: 'Deploy',
+      dataIndex: 'deploy',
+      render: deploy => (deploy ? <Tag color="geekblue">{deploy}</Tag> : '')
+    },
+    {
       title: 'Status',
       dataIndex: 'status',
       render: (status) => {
@@ -181,18 +187,8 @@ const App = () => {
       title: 'Action',
       render: (_, record) => (
         <Space>
-          <Button
-            icon={<EditOutlined />}
-            onClick={() => openEditModal(record)}
-            disabled={isReadOnly}
-          />
-          <Button
-            icon={<DeleteOutlined />}
-            danger
-            loading={deletingKey === record.key}
-            onClick={() => handleDelete(record)}
-            disabled={isReadOnly}
-          />
+          <Button icon={<EditOutlined />} onClick={() => openEditModal(record)} disabled={isReadOnly} />
+          <Button icon={<DeleteOutlined />} danger loading={deletingKey === record.key} onClick={() => handleDelete(record)} disabled={isReadOnly} />
         </Space>
       )
     }
@@ -205,7 +201,8 @@ const App = () => {
       item.description?.toLowerCase().includes(searchLower) ||
       item.project?.toLowerCase().includes(searchLower) ||
       item.status?.toLowerCase().includes(searchLower) ||
-      item.note?.toLowerCase().includes(searchLower);
+      item.note?.toLowerCase().includes(searchLower) ||
+      item.deploy?.toLowerCase().includes(searchLower);
 
     const matchesStatus = filterStatus.length === 0 || filterStatus.includes(item.status);
     const matchesProject = !filterProject || item.project === filterProject;
@@ -275,7 +272,7 @@ const App = () => {
             ))}
           </Select>
         </Col>
-        
+
         <Col span={1}>
           {!localToken ? (
             <Button
@@ -293,7 +290,6 @@ const App = () => {
               icon={<CloseOutlined />}
               danger
               onClick={() => {
-                // tombol close token dari UI — hapus token & set read-only
                 localStorage.removeItem('task-token');
                 setLocalToken(null);
                 setIsReadOnly(true);
@@ -351,6 +347,13 @@ const App = () => {
             <Select disabled={isReadOnly}>
               {projectOptions.map(proj => (
                 <Option key={proj} value={proj}>{proj}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item name="deploy" label="Deploy" rules={[{ required: true }]}>
+            <Select disabled={isReadOnly}>
+              {deployOptions.map(opt => (
+                <Option key={opt} value={opt}>{opt}</Option>
               ))}
             </Select>
           </Form.Item>
