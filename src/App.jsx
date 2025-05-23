@@ -300,7 +300,7 @@ const App = () => {
               ))}
             </Select>
           </Form.Item>
-          <Form.Item name="deadline" label="Deadline" rules={[{ required: true }]}>
+          <Form.Item name="deadline" label="Date" rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="status" label="Status" rules={[{ required: true }]}>
