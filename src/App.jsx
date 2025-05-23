@@ -219,6 +219,7 @@ const App = () => {
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
+      <div>tes</div>
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={8}>
           <Input placeholder="Search..." value={searchText} onChange={e => setSearchText(e.target.value)} allowClear />
@@ -254,7 +255,7 @@ const App = () => {
         columns={columns}
         dataSource={filteredData}
         rowKey="key"
-        pagination={{ pageSize: 5 }}
+        pagination={{ pageSize: 10 }}
         loading={loading}
         scroll={{ x: 1000 }} 
       />
