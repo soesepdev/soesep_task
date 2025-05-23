@@ -10,12 +10,12 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 
 const { Option } = Select;
 const { confirm } = Modal;
 
 const MAIN_BIN_ID = '682c44bf8960c979a59d8006';
-// const HISTORY_BIN_ID = '682c44da8a456b7966a1be34';
 const JSONBIN_API = 'https://api.jsonbin.io/v3/b';
 const ACCESS_KEY = '$2a$10$E8n0tBaz.zWHVc4S9UDEkO3UTGM2Ir0XxuiLYYkJf1TZz8Z0QMvjC';
 
@@ -41,16 +41,14 @@ const App = () => {
   const [editingTask, setEditingTask] = useState(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
-  const [filterStatus, setFilterStatus] = useState([]); // Multiple select array
+  const [filterStatus, setFilterStatus] = useState([]);
   const [filterProject, setFilterProject] = useState(null);
+  const [filterDate, setFilterDate] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  // pagination page size
-  const [pageSize, setPageSize] = useState(10);
-
-  // loading button states
   const [submitLoading, setSubmitLoading] = useState(false);
   const [deletingKey, setDeletingKey] = useState(null);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchData();
@@ -61,7 +59,7 @@ const App = () => {
     try {
       const res = await axios.get(`${JSONBIN_API}/${MAIN_BIN_ID}`, axiosConfig);
       const items = res.data.record || [];
-      setData(items.map((item, idx) => ({ ...item, key: idx })));
+      setData(items);
     } catch (err) {
       console.error(err);
       message.error('Failed to fetch data');
@@ -85,12 +83,12 @@ const App = () => {
       setSubmitLoading(true);
       const newTask = {
         ...values,
-        deadline: values.deadline.format('YYYY-MM-DD')
+        deadline: values.deadline.format('YYYY-MM-DD'),
+        key: editingTask ? editingTask.key : uuidv4()
       };
       let newData;
-      if (editingTask !== null) {
-        newData = [...data];
-        newData[editingTask.key] = newTask;
+      if (editingTask) {
+        newData = data.map(item => (item.key === editingTask.key ? newTask : item));
         message.success('Task updated');
       } else {
         newData = [...data, newTask];
@@ -112,7 +110,7 @@ const App = () => {
       okType: 'danger',
       onOk: async () => {
         setDeletingKey(record.key);
-        const newData = data.filter((_, idx) => idx !== record.key);
+        const newData = data.filter(item => item.key !== record.key);
         await saveData(newData);
         setDeletingKey(null);
         message.success('Deleted');
@@ -135,13 +133,13 @@ const App = () => {
   const columns = [
     {
       title: 'No',
-      render: (_, __, index) => index + 1,
+      render: (_, __, index) => (currentPage - 1) * pageSize + index + 1,
       width: 50
     },
     { title: 'Name', dataIndex: 'name' },
     { title: 'Description', dataIndex: 'description' },
     { title: 'Project', dataIndex: 'project' },
-    { title: 'Deadline', dataIndex: 'deadline' },
+    { title: 'Date', dataIndex: 'deadline' },
     {
       title: 'Status',
       dataIndex: 'status',
@@ -153,7 +151,7 @@ const App = () => {
           case 'in progress': color = 'blue'; icon = <SyncOutlined spin />; break;
           case 'pending': color = 'orange'; icon = <ClockCircleOutlined />; break;
           case 'not started': color = 'cyan'; icon = <ExclamationCircleOutlined />; break;
-          default: color = 'red'; icon = <MinusCircleOutlined />;
+          default: color = 'red'; icon = <MinusCircleOutlined />; break;
         }
         return <Tag icon={icon} color={color}>{status.toUpperCase()}</Tag>;
       }
@@ -175,26 +173,29 @@ const App = () => {
     }
   ];
 
-  // Filter data including searchText (search all columns), filterStatus (multiple), filterProject
   const filteredData = data.filter(item => {
     const searchLower = searchText.toLowerCase();
     const matchesSearch =
-      item.name.toLowerCase().includes(searchLower) ||
-      item.description.toLowerCase().includes(searchLower) ||
-      item.project.toLowerCase().includes(searchLower) ||
-      item.status.toLowerCase().includes(searchLower) ||
-      (item.note ? item.note.toLowerCase().includes(searchLower) : false);
+      item.name?.toLowerCase().includes(searchLower) ||
+      item.description?.toLowerCase().includes(searchLower) ||
+      item.project?.toLowerCase().includes(searchLower) ||
+      item.status?.toLowerCase().includes(searchLower) ||
+      item.note?.toLowerCase().includes(searchLower);
 
     const matchesStatus = filterStatus.length === 0 || filterStatus.includes(item.status);
-    const matchesProject = filterProject ? item.project === filterProject : true;
+    const matchesProject = !filterProject || item.project === filterProject;
+    const matchesDate = !filterDate || (
+      item.deadline && dayjs(item.deadline).isValid() &&
+      dayjs(item.deadline).isSame(filterDate, 'day')
+    );
 
-    return matchesSearch && matchesStatus && matchesProject;
+    return matchesSearch && matchesStatus && matchesProject && matchesDate;
   });
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
       <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={6}>
+        <Col span={5}>
           <Input
             placeholder="Search..."
             value={searchText}
@@ -203,7 +204,7 @@ const App = () => {
           />
         </Col>
 
-        <Col span={6}>
+        <Col span={5}>
           <Select
             mode="multiple"
             placeholder="Filter by status"
@@ -233,20 +234,24 @@ const App = () => {
         </Col>
 
         <Col span={4}>
-          <Select
-            value={pageSize}
-            onChange={setPageSize}
-            style={{ width: 120 }}
-          >
+          <DatePicker
+            placeholder="Filter by deadline"
+            value={filterDate}
+            onChange={setFilterDate}
+            allowClear
+            style={{ width: '100%' }}
+          />
+        </Col>
+
+        <Col span={3}>
+          <Select value={pageSize} onChange={setPageSize} style={{ width: '100%' }}>
             {[5, 10, 20, 50].map(size => (
-              <Option key={size} value={size}>
-                Show {size}
-              </Option>
+              <Option key={size} value={size}>Show {size}</Option>
             ))}
           </Select>
         </Col>
 
-        <Col span={4} style={{ textAlign: 'right' }}>
+        <Col span={3} style={{ textAlign: 'right' }}>
           <Button
             type="primary"
             onClick={() => {
@@ -264,7 +269,12 @@ const App = () => {
         columns={columns}
         dataSource={filteredData}
         rowKey="key"
-        pagination={{ pageSize }}
+        pagination={{
+          current: currentPage,
+          pageSize,
+          onChange: (page) => setCurrentPage(page),
+          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`
+        }}
         loading={loading}
         scroll={{ x: 1000 }}
       />
