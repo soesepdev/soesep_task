@@ -45,6 +45,7 @@ const App = () => {
   const [filterStatus, setFilterStatus] = useState([]);
   const [filterProject, setFilterProject] = useState(null);
   const [filterDate, setFilterDate] = useState(null);
+  const [filterDeploy, setFilterDeploy] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [deletingKey, setDeletingKey] = useState(null);
@@ -206,18 +207,19 @@ const App = () => {
 
     const matchesStatus = filterStatus.length === 0 || filterStatus.includes(item.status);
     const matchesProject = !filterProject || item.project === filterProject;
+    const matchesDeploy = !filterDeploy || item.deploy === filterDeploy;
     const matchesDate = !filterDate || (
       item.deadline && dayjs(item.deadline).isValid() &&
       dayjs(item.deadline).isSame(filterDate, 'day')
     );
 
-    return matchesSearch && matchesStatus && matchesProject && matchesDate;
+    return matchesSearch && matchesStatus && matchesProject && matchesDeploy && matchesDate;
   });
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
       <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={5}>
+        <Col span={3}>
           <Input
             placeholder="Search..."
             value={searchText}
@@ -226,10 +228,10 @@ const App = () => {
           />
         </Col>
 
-        <Col span={5}>
+        <Col span={3}>
           <Select
             mode="multiple"
-            placeholder="Filter by status"
+            placeholder="Status"
             value={filterStatus}
             onChange={setFilterStatus}
             allowClear
@@ -241,9 +243,9 @@ const App = () => {
           </Select>
         </Col>
 
-        <Col span={4}>
+        <Col span={3}>
           <Select
-            placeholder="Filter by project"
+            placeholder="Project"
             value={filterProject}
             onChange={setFilterProject}
             allowClear
@@ -256,8 +258,22 @@ const App = () => {
         </Col>
 
         <Col span={3}>
+          <Select
+            placeholder="Deploy"
+            value={filterDeploy}
+            onChange={setFilterDeploy}
+            allowClear
+            style={{ width: '100%' }}
+          >
+            {deployOptions.map(opt => (
+              <Option key={opt} value={opt}>{opt}</Option>
+            ))}
+          </Select>
+        </Col>
+
+        <Col span={3}>
           <DatePicker
-            placeholder="Filter by date"
+            placeholder="Date"
             value={filterDate}
             onChange={setFilterDate}
             allowClear
@@ -273,7 +289,7 @@ const App = () => {
           </Select>
         </Col>
 
-        <Col span={1}>
+        <Col span={4}>
           {!localToken ? (
             <Button
               icon={<LockOutlined />}
@@ -299,7 +315,7 @@ const App = () => {
           )}
         </Col>
 
-        <Col span={3} style={{ textAlign: 'right' }}>
+        <Col span={2} style={{ textAlign: 'right' }}>
           <Button
             type="primary"
             disabled={isReadOnly}
@@ -377,9 +393,6 @@ const App = () => {
         open={tokenModalOpen}
         title="Enter Token"
         onCancel={() => {
-          localStorage.removeItem('task-token');
-          setLocalToken(null);
-          setIsReadOnly(true);
           setTokenModalOpen(false);
           setTokenInput('');
         }}
