@@ -33,7 +33,7 @@ const statusOptions = [
   { value: 'not started', label: 'Not started' },
 ];
 
-const projectOptions = ['MyGraPARI', 'OM'];
+const projectOptions = ['MyGraPARI', 'OM', 'LRT_Sumsel'];
 const deployOptions = ['Local', 'Dev', 'Production'];
 
 const App = () => {
